@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIGHT TANK | 3D 도면 설계 및 실시간 견적 시스템</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Web Fonts (Pretendard) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght=300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Three.js 3D Core Library & Controls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #08090c;
+        }
+        .glass-panel {
+            background: rgba(17, 19, 28, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* Receipt custom style */
+        .accent-glow {
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.1);
+        }
+        /* Segment transition style */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Color Swatches Neon Styles */
+        .swatch-btn {
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .swatch-btn:hover {
+            transform: scale(1.1);
+        }
+        .swatch-btn.active {
+            transform: scale(1.15);
+            box-shadow: 0 0 15px currentColor;
+        }
+        /* Print media styles */
+        @media print {
+            body { background: white; color: black; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .glass-panel { border: none; background: white; color: black; }
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-full flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-gray-900 bg-slate-950/70 backdrop-blur-md sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-red-900/40">
+                    <i class="fa-solid fa-cubes text-xl animate-pulse"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-lg font-black tracking-wider text-white">LIGHT TANK</h1>
+                        <span class="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full font-bold">3D 시뮬레이션 플랫폼</span>
+                    </div>
+                    <p class="text-xs text-gray-400">라이트탱크 실시간 견적 매칭 & 3D 입체 도면 시뮬레이터</p>
+                </div>
+            </div>
+            <div>
+                <a href="https://linktr.ee/lighttank" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-400 hover:text-white flex items-center space-x-1 border border-gray-800 px-3 py-1.5 rounded-lg hover:bg-slate-900 transition-all">
+                    <span>공식 브랜드 채널</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 md:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Switchable Input Panel (7 Cols) -->
+        <section class="lg:col-span-7 space-y-6 no-print">
+            
+            <!-- Dual-Mode Segment Selector Tab -->
+            <div class="bg-slate-950/90 p-1.5 rounded-2xl border border-gray-800/80 flex items-center shadow-lg">
+                <button onclick="switchTab('form')" id="btn-tab-form" class="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all bg-red-600 text-white shadow">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>카드형 간편 견적</span>
+                </button>
+                <button onclick="switchTab('grid')" id="btn-tab-grid" class="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-compass-drafting"></i>
+                    <span>3D 도면 배치</span>
+                </button>
+            </div>
+
+            <!-- TAB 1: FORM SYSTEM (Card-based Estimation Panel) -->
+            <div id="tab-form-content" class="tab-content active space-y-6">
+                <div class="glass-panel rounded-2xl p-6 accent-glow transition-all hover:border-red-500/30">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
+                            <i class="fa-solid fa-server"></i>
+                        </div>
+                        <h2 class="text-xl font-semibold text-white">1. 라이트탱크 규격 패키지 선택</h2>
+                    </div>
+
+                    <!-- Spec Selection Cards Grid (6 Ordered Cards) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+                        <!-- 1. 16 DOT 사양 -->
+                        <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all bg-slate-900/40 hover:bg-slate-900/80" id="card-16">
+                            <input type="radio" name="tank_spec" value="16" class="sr-only" onchange="updateEstimates()">
+                            <div class="flex justify-end items-center mb-3">
+                                <span class="text-gray-600" id="radio-icon-16"><i class="fa-regular fa-circle"></i></span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">16 DOT 사양</h3>
+                            <p class="text-[11px] text-gray-400 mb-2">소규모 공간 연출 및 고기능 컴팩트 라이트 라인업</p>
+                        </label>
+
+                        <!-- 2. 26 DOT 사양 -->
+                        <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all bg-slate-900/40 hover:bg-slate-900/80" id="card-26">
+                            <input type="radio" name="tank_spec" value="26" class="sr-only" onchange="updateEstimates()">
+                            <div class="flex justify-end items-center mb-3">
+                                <span class="text-gray-600" id="radio-icon-26"><i class="fa-regular fa-circle"></i></span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">26 DOT 사양</h3>
+                            <p class="text-[11px] text-gray-400 mb-2">가장 널리 활용되는 스테디셀러 볼륨 연출 패키지</p>
+                        </label>
+
+                        <!-- 3. 36 DOT 사양 -->
+                        <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all bg-slate-900/40 hover:bg-slate-900/80" id="card-36">
+                            <input type="radio" name="tank_spec" value="36" class="sr-only" onchange="updateEstimates()">
+                            <div class="flex justify-end items-center mb-3">
+                                <span class="text-gray-600" id="radio-icon-36"><i class="fa-regular fa-circle"></i></span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">36 DOT 사양</h3>
+                            <p class="text-[11px] text-gray-400 mb-2">페스티벌, 대규모 무대를 위한 메가 연출 포맷</p>
+                        </label>
+
+                        <!-- 4. LTTK 선쉐이드 -->
+                        <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all bg-slate-900/40 hover:bg-slate-900/80" id="card-shade">
+                            <input type="radio" name="tank_spec" value="shade" class="sr-only" onchange="updateEstimates()">
+                            <div class="flex justify-end items-center mb-3">
+                                <span class="text-gray-600" id="radio-icon-shade"><i class="fa-regular fa-circle"></i></span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">LTTK 선쉐이드</h3>
+                            <p class="text-[11px] text-gray-400 mb-2">조명 연출과 상단 그늘막 차양이 결합된 실용 특화 모델</p>
+                        </label>
+
+                        <!-- 5. LTTK 아치 -->
+                        <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all bg-slate-900/40 hover:bg-slate-900/80" id="card-arch">
+                            <input type="radio" name="tank_spec" value="arch" class="sr-only" onchange="updateEstimates()">
+                            <div class="flex justify-end items-center mb-3">
+                                <span class="text-gray-600" id="radio-icon-arch"><i class="fa-regular fa-circle"></i></span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1">LTTK 아치</h3>
+                            <p class="text-[11px] text-gray-400 mb-2">라이트 터널 및 메인 포토존 동선 구성을 위한 구조 패키지</p>
+                        </label>
+
+                        <!-- 6. LIGHTTANK CUSTOM -->
+                        <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all bg-slate-900/40 hover:bg-slate-900/80" id="card-custom">
+                            <input type="radio" name="tank_spec" value="custom" class="sr-only" checked onchange="updateEstimates()">
+                            <div class="flex justify-end items-center mb-2">
+                                <span class="text-red-500" id="radio-icon-custom"><i class="fa-solid fa-circle-check"></i></span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-1 leading-tight">LIGHTTANK<br>CUSTOM</h3>
+                            <p class="text-[11px] text-gray-400 mb-2">수량을 자유자재로 설정해 인력/물류가 맞춤 설계되는 모델</p>
+                        </label>
+                    </div>
+
+                    <!-- Sub Spec Selector (Shade or Arch detail options) -->
+                    <div id="sub-spec-container" class="bg-slate-950/40 p-4 rounded-xl border border-gray-800 mb-6 hidden transition-all duration-300">
+                        <div>
+                            <span class="text-xs font-bold text-white block mb-1" id="sub-spec-label">세부 타입 선택</span>
+                            <span class="text-[11px] text-gray-400 block mb-4">선택하신 스페셜 규격 구조물의 타입에 따라 필수 자원들이 동시 연동 설계됩니다.</span>
+                        </div>
+                        
+                        <!-- Shade Sub Options -->
+                        <div id="shade-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="flex items-center justify-between p-4 rounded-xl border border-gray-800 bg-slate-900/30 cursor-pointer transition-all" id="sub-card-hexagon">
+                                <input type="radio" name="sub_spec_shade" value="hexagon" class="sr-only" checked onchange="updateEstimates()">
+                                <div>
+                                    <span class="text-xs font-bold text-white block">육각형 타입</span>
+                                    <span class="text-[10px] text-gray-400">탱크 28개 / 인력 4명 / 11톤 / 지게차 3회 / 물차 1회</span>
+                                </div>
+                                <span class="text-red-500" id="sub-icon-hexagon"><i class="fa-solid fa-circle-check"></i></span>
+                            </label>
+                            <label class="flex items-center justify-between p-4 rounded-xl border border-gray-800 bg-slate-900/30 cursor-pointer transition-all" id="sub-card-square">
+                                <input type="radio" name="sub_spec_shade" value="square" class="sr-only" onchange="updateEstimates()">
+                                <div>
+                                    <span class="text-xs font-bold text-white block">사각형 타입</span>
+                                    <span class="text-[10px] text-gray-400">탱크 30개 / 인력 4명 / 11톤 / 지게차 3회 / 물차 1회</span>
+                                </div>
+                                <span class="text-gray-600" id="sub-icon-square"><i class="fa-regular fa-circle"></i></span>
+                            </label>
+                        </div>
+
+                        <!-- Arch Sub Options -->
+                        <div id="arch-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3 hidden">
+                            <label class="flex items-center justify-between p-4 rounded-xl border border-gray-800 bg-slate-900/30 cursor-pointer transition-all" id="sub-card-basic">
+                                <input type="radio" name="sub_spec_arch" value="basic" class="sr-only" checked onchange="updateEstimates()">
+                                <div>
+                                    <span class="text-xs font-bold text-white block">기본형 아치</span>
+                                    <span class="text-[10px] text-gray-400">탱크 12개 / 인력 2명 / 3.5톤 / 지게차 2회 / 물차 1회</span>
+                                </div>
+                                <span class="text-red-500" id="sub-icon-basic"><i class="fa-solid fa-circle-check"></i></span>
+                            </label>
+                            <label class="flex items-center justify-between p-4 rounded-xl border border-gray-800 bg-slate-900/30 cursor-pointer transition-all" id="sub-card-extended">
+                                <input type="radio" name="sub_spec_arch" value="extended" class="sr-only" onchange="updateEstimates()">
+                                <div>
+                                    <span class="text-xs font-bold text-white block">확장형 아치</span>
+                                    <span class="text-[10px] text-gray-400">탱크 26개 / 인력 3명 / 5톤 / 지게차 3회 / 물차 1회</span>
+                                </div>
+                                <span class="text-gray-600" id="sub-icon-extended"><i class="fa-regular fa-circle"></i></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Input Custom Quantity -->
+                    <div id="tank-qty-container" class="bg-slate-950/40 p-4 rounded-xl border border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300">
+                        <div>
+                            <span class="text-xs font-bold text-white block">라이트탱크 커스텀 수량 입력</span>
+                            <span class="text-[11px] text-gray-400">설치 대량에 맞춰 인건비 및 중장비 물류가 도미노 연동 설계됩니다.</span>
+                        </div>
+                        <div class="flex items-center space-x-3 self-end md:self-auto">
+                            <button onclick="changeQty('tank_qty', -1)" class="w-9 h-9 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-white font-bold transition-all">-</button>
+                            <input type="number" id="tank_qty" value="1" min="1" class="w-16 h-9 rounded-lg bg-slate-900 border border-gray-700 text-center text-xs text-white font-semibold focus:outline-none focus:border-red-500" onchange="updateEstimates()">
+                            <button onclick="changeQty('tank_qty', 1)" class="w-9 h-9 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-white font-bold transition-all">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: 3D GRID SYSTEM (Spacious Interactive 3D Canvas Panel) -->
+            <div id="tab-grid-content" class="tab-content space-y-6">
+                <div class="glass-panel rounded-2xl p-4 md:p-6 accent-glow flex flex-col h-full">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
+                                <i class="fa-solid fa-cube text-lg"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-white leading-none">3D 스테이지 입체 디자이너</h2>
+                                <p class="text-[11px] text-gray-400 mt-1">3D 탱크를 자유롭게 붙이고 연출 색상을 실시간으로 시뮬레이션해 보세요.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Tool Selectors (For mobile touch support and convenience) -->
+                        <div class="flex items-center bg-slate-950/60 p-1 rounded-xl border border-gray-800 self-end sm:self-auto">
+                            <button onclick="setTool('draw')" id="tool-draw" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 bg-red-600 text-white transition-all">
+                                <i class="fa-solid fa-pen"></i>
+                                <span>그리기</span>
+                            </button>
+                            <button onclick="setTool('erase')" id="tool-erase" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 text-gray-400 hover:text-white transition-all">
+                                <i class="fa-solid fa-eraser"></i>
+                                <span>지우개</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3D Canvas Viewport Wrapper -->
+                    <div class="relative w-full max-w-[500px] mx-auto bg-[#08090c] rounded-xl border border-gray-800 overflow-hidden aspect-square flex items-center justify-center">
+                        <div id="canvas3d-container" class="w-full h-full cursor-grab active:cursor-grabbing">
+                            <!-- Three.js renderer DOM injected here -->
+                        </div>
+                    </div>
+
+                    <!-- LED Color Control Swatch Panel -->
+                    <div class="mt-5 border-t border-gray-800/80 pt-4">
+                        <div class="text-[11px] text-gray-400 font-semibold mb-3 flex items-center space-x-2">
+                            <i class="fa-solid fa-lightbulb text-amber-400 animate-pulse"></i>
+                            <span>LED 연출 조명 색상 변경</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2.5 items-center justify-start">
+                            <button onclick="changeLEDColor('#ef4444', 'red')" id="btn-color-red" class="swatch-btn w-9 h-9 rounded-full bg-red-500 border border-white/20 active text-red-500" title="RED"></button>
+                            <button onclick="changeLEDColor('#10b981', 'green')" id="btn-color-green" class="swatch-btn w-9 h-9 rounded-full bg-emerald-500 border border-white/20 text-emerald-500" title="GREEN"></button>
+                            <button onclick="changeLEDColor('#3b82f6', 'blue')" id="btn-color-blue" class="swatch-btn w-9 h-9 rounded-full bg-blue-500 border border-white/20 text-blue-500" title="BLUE"></button>
+                            <button onclick="changeLEDColor('#ffffff', 'white')" id="btn-color-white" class="swatch-btn w-9 h-9 rounded-full bg-white border border-white/20 text-white" title="WHITE"></button>
+                            <button onclick="changeLEDColor('#d946ef', 'magenta')" id="btn-color-magenta" class="swatch-btn w-9 h-9 rounded-full bg-magenta-500 border border-white/20 text-fuchsia-500" style="background-color: #d946ef;" title="MAGENTA"></button>
+                            <button onclick="changeLEDColor('#06b6d4', 'cyan')" id="btn-color-cyan" class="swatch-btn w-9 h-9 rounded-full bg-cyan-500 border border-white/20 text-cyan-500" title="CYAN"></button>
+                            <button onclick="changeLEDColor('#eab308', 'yellow')" id="btn-color-yellow" class="swatch-btn w-9 h-9 rounded-full bg-yellow-500 border border-white/20 text-yellow-500" title="YELLOW"></button>
+                            
+                            <button onclick="reset3DStage()" class="ml-auto px-3.5 py-2 rounded-xl bg-rose-950/40 border border-rose-900/30 hover:bg-rose-950/80 text-rose-300 text-xs font-bold transition-all flex items-center space-x-1.5">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <span>무대 초기화</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Visual Manual Checklist Guidelines -->
+                    <div class="mt-4 p-3 rounded-xl bg-slate-900/30 border border-gray-800/50 text-[11px] text-gray-400 space-y-1">
+                        <div class="flex items-center space-x-1 text-white/80 font-bold mb-1">
+                            <i class="fa-solid fa-circle-info text-red-400"></i>
+                            <span>3D 마우스 조작 방법</span>
+                        </div>
+                        <p>• <strong>탱크 설치</strong>: 빈 바닥(그리드) 또는 탱크 옆면을 <strong>마우스 왼쪽 클릭</strong>(연필 툴 활성화 시)</p>
+                        <p>• <strong>탱크 소거</strong>: 제거할 탱크를 <strong>마우스 오른쪽 클릭</strong>(또는 지우개 툴 활성화 후 왼쪽 클릭)</p>
+                        <p>• <strong>카메라 회전</strong>: 빈 공간을 클릭하고 <strong>마우스를 돌려(드래그)</strong> 무대의 입체적인 다른 각도를 감상</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UNIFIED STEP 2: Optional Accessories (Visible ONLY in Card/Form tab, dynamically hidden in Grid tab) -->
+            <div id="accessories-panel" class="glass-panel rounded-2xl p-5 transition-all hover:border-red-500/10">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
+                        <i class="fa-solid fa-box-open"></i>
+                    </div>
+                    <h2 class="text-base font-bold text-white">2. 현장 추가 옵션 & 액세서리 선택</h2>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <!-- ACC: 테이블 -->
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/20 border border-gray-800/80">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-gray-400 text-xs">
+                                <i class="fa-solid fa-table"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-white block">LTTK_테이블</span>
+                                <span class="text-[10px] text-gray-500">₩50,000 / 식</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeQty('acc_table', -1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">-</button>
+                            <input type="number" id="acc_table" value="0" min="0" class="w-10 h-6 rounded bg-slate-950 border border-gray-800 text-center text-xs text-white" onchange="updateEstimates()">
+                            <button onclick="changeQty('acc_table', 1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">+</button>
+                        </div>
+                    </div>
+
+                    <!-- ACC: 파라솔 -->
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/20 border border-gray-800/80">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-gray-400 text-xs">
+                                <i class="fa-solid fa-umbrella"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-white block">LTTK_파라솔</span>
+                                <span class="text-[10px] text-gray-500">₩20,000 / 식</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeQty('acc_parasol', -1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">-</button>
+                            <input type="number" id="acc_parasol" value="0" min="0" class="w-10 h-6 rounded bg-slate-950 border border-gray-800 text-center text-xs text-white" onchange="updateEstimates()">
+                            <button onclick="changeQty('acc_parasol', 1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">+</button>
+                        </div>
+                    </div>
+
+                    <!-- ACC: 선쉐이드 삼각 -->
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/20 border border-gray-800/80">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-amber-500/80 text-xs">
+                                <i class="fa-solid fa-play rotate-[30deg]"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-white block">LTTK_선쉐이드 (삼각)</span>
+                                <span class="text-[10px] text-gray-500">₩150,000 / 식</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeQty('acc_shade_tri', -1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">-</button>
+                            <input type="number" id="acc_shade_tri" value="0" min="0" class="w-10 h-6 rounded bg-slate-950 border border-gray-800 text-center text-xs text-white" onchange="updateEstimates()">
+                            <button onclick="changeQty('acc_shade_tri', 1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">+</button>
+                        </div>
+                    </div>
+
+                    <!-- ACC: 선쉐이드 사각 -->
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/20 border border-gray-800/80">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-sky-400/80 text-xs">
+                                <i class="fa-solid fa-square"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-white block">LTTK_선쉐이드 (사각)</span>
+                                <span class="text-[10px] text-gray-500">₩150,000 / 식</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeQty('acc_shade_sq', -1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">-</button>
+                            <input type="number" id="acc_shade_sq" value="0" min="0" class="w-10 h-6 rounded bg-slate-950 border border-gray-800 text-center text-xs text-white" onchange="updateEstimates()">
+                            <button onclick="changeQty('acc_shade_sq', 1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">+</button>
+                        </div>
+                    </div>
+
+                    <!-- ACC: 스트링라이트 -->
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/20 border border-gray-800/80">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-gray-400 text-xs">
+                                <i class="fa-solid fa-lightbulb"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-white block">LTTK_스트링라이트</span>
+                                <span class="text-[10px] text-gray-500">₩10,000 / 미터</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeQty('acc_string', -5)" class="px-2 py-1 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white">-5m</button>
+                            <input type="number" id="acc_string" value="0" min="0" step="5" class="w-12 h-6 rounded bg-slate-950 border border-gray-800 text-center text-xs text-white" onchange="updateEstimates()">
+                            <button onclick="changeQty('acc_string', 5)" class="px-2 py-1 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white">+5m</button>
+                        </div>
+                    </div>
+
+                    <!-- ACC: 물차 (5톤) -->
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/20 border border-gray-800/80">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-teal-400 text-xs">
+                                <i class="fa-solid fa-faucet-drip"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-white block">LTTK_물차 (5톤)</span>
+                                <span class="text-[10px] text-gray-500">₩400,000 / 회</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeQty('acc_water', -1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">-</button>
+                            <input type="number" id="acc_water" value="0" min="0" class="w-10 h-6 rounded bg-slate-950 border border-gray-800 text-center text-xs text-white" onchange="updateEstimates()">
+                            <button onclick="changeQty('acc_water', 1)" class="w-6 h-6 rounded bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-xs">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Receipt & Calculations (5 Cols) -->
+        <aside class="lg:col-span-5 flex flex-col h-full justify-between">
+            <div class="glass-panel rounded-2xl p-6 sticky top-24 accent-glow border-red-500/10 flex flex-col min-h-[580px] justify-between">
+                <div>
+                    <!-- Receipt Header -->
+                    <div class="border-b border-gray-800 pb-4 mb-4 flex justify-between items-center">
+                        <div>
+                            <span class="text-[10px] text-red-500 font-bold uppercase tracking-widest block">Real-time Invoice</span>
+                            <h2 class="text-xl font-black text-white">가견적 영수증</h2>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-400 block" id="meta-quant-label">신청 규모</span>
+                            <span class="text-lg font-black text-red-500" id="meta-quant-value">0 DOT</span>
+                        </div>
+                    </div>
+
+                    <!-- Live Breakdown List -->
+                    <div class="space-y-3.5 overflow-y-auto max-h-[340px] pr-2" id="breakdown-list">
+                        <!-- Content dynamically loaded via JS -->
+                    </div>
+                </div>
+
+                <!-- Total and Action Buttons -->
+                <div class="border-t border-gray-800 pt-4 mt-6 space-y-4">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-xs font-semibold text-gray-400">총 예상 합계 (VAT 별도)</span>
+                        <div class="text-right">
+                            <span class="text-3xl font-black text-white tracking-tight" id="grand-total">₩0</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 no-print">
+                        <button onclick="window.print()" class="py-3 px-4 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800 text-white font-semibold text-xs transition-all flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-print"></i>
+                            <span>도면 PDF / 인쇄</span>
+                        </button>
+                        <a href="https://linktr.ee/lighttank" target="_blank" rel="noopener noreferrer" class="py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white font-bold text-xs shadow-lg shadow-red-900/30 transition-all flex items-center justify-center space-x-2 text-center">
+                            <span>라이트탱크 링크</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- Print Only Blueprint Header (Hidden in UI) -->
+    <div class="hidden print-only max-w-4xl mx-auto p-8 text-black">
+        <h1 class="text-3xl font-black mb-2">LIGHT TANK STAGE BLUEPRINT</h1>
+        <p class="text-sm text-gray-600 mb-6">본 견적 및 도면은 라이트탱크 도면 시뮬레이터에서 실시간으로 생성되었습니다.</p>
+        <div class="border border-black p-4 mb-6">
+            <h2 class="text-lg font-bold mb-4">도면 가견적 상세</h2>
+            <div id="print-stage-info" class="text-sm mb-4"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-950 bg-slate-950/40 py-6 mt-12 text-center text-xs text-gray-500 no-print">
+        <p>© 2026 LIGHT TANK. All rights reserved. 본 가견적은 설계 도면 및 현장 상황에 따라 실 시공 시 변동될 수 있습니다.</p>
+    </footer>
+
+    <!-- Estimation & 3D Stage Drawing Logic JS -->
+    <script>
+        let activeTab = 'form'; // 'form' or 'grid' (3D)
+        
+        // 3D Engine Variables
+        let scene, camera, renderer, controls;
+        let threeInitialized = false;
+        let groundPlane;
+        const cubeSize = 1.0;
+        
+        // Trackers
+        let placedCubes = []; // Array of { mesh: Group, position: Vector3, coordStr: String }
+        let placedCoords = new Set(); // For fast coordinate checks: "x,y,z"
+        let activeTool = 'draw'; // 'draw' or 'erase'
+        let currentEmissiveColor = '#ef4444'; // Hex
+        let currentEmissiveName = 'red';
+        
+        // Raycasting & Interaction
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let planeHelper;
+        let ghostMesh;
+        let pointerDownTime = 0;
+        let pointerDownPos = { x: 0, y: 0 };
+
+        // Pricing values
+        const prices = {
+            tank: 200000,
+            people: 200000,
+            truck16: 300000, // 3.5t
+            truck26: 350000, // 5t
+            truck36: 400000, // 11t
+            forklift: 100000,
+            water: 400000,
+            table: 50000,
+            parasol: 20000,
+            string: 10000,
+            shadeTri: 150000,
+            shadeSq: 150000
+        };
+
+        // Tab selection logic
+        function switchTab(tabId) {
+            activeTab = tabId;
+            const tabFormContent = document.getElementById('tab-form-content');
+            const tabGridContent = document.getElementById('tab-grid-content');
+            const btnTabForm = document.getElementById('btn-tab-form');
+            const btnTabGrid = document.getElementById('btn-tab-grid');
+            const accessoriesPanel = document.getElementById('accessories-panel');
+
+            if (tabId === 'form') {
+                tabFormContent.classList.add('active');
+                tabGridContent.classList.remove('active');
+                accessoriesPanel.style.display = 'block'; // Show accessories panel on Form mode
+                btnTabForm.className = 'flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all bg-red-600 text-white shadow';
+                btnTabGrid.className = 'flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all text-gray-400 hover:text-white';
+                document.getElementById('meta-quant-label').innerText = "신청 규모";
+            } else {
+                tabFormContent.classList.remove('active');
+                tabGridContent.classList.add('active');
+                accessoriesPanel.style.display = 'none'; // Completely hide optional accessories on 3D Mode
+                btnTabForm.className = 'flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all text-gray-400 hover:text-white';
+                btnTabGrid.className = 'flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all bg-red-600 text-white shadow';
+                document.getElementById('meta-quant-label').innerText = "설치 단량";
+
+                // Initialize 3D renderer if first time
+                if (!threeInitialized) {
+                    setTimeout(() => {
+                        init3D();
+                    }, 50);
+                } else {
+                    // Trigger bounds adjustment
+                    setTimeout(() => {
+                        onWindowResize();
+                    }, 50);
+                }
+            }
+            updateEstimates();
+        }
+
+        // THREE.js 3D Viewport Builder Initialize
+        function init3D() {
+            const container = document.getElementById('canvas3d-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x08090c);
+
+            // Fog to enhance depth
+            scene.fog = new THREE.FogExp2(0x08090c, 0.04);
+
+            // Camera Setup
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+            camera.position.set(7, 8, 12);
+
+            // Renderer Setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Orbit Controls for smooth camera rotations
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 - 0.05; // Lock camera from going below ground
+            controls.minDistance = 2;
+            controls.maxDistance = 30;
+            controls.target.set(0, 1, 0);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            dirLight.position.set(10, 15, 8);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 40;
+            const d = 10;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            scene.add(dirLight);
+
+            // Secondary colored ground light to illuminate the metal structures
+            const groundLight = new THREE.HemisphereLight(0xffffff, 0x111115, 0.4);
+            scene.add(groundLight);
+
+            // Grid Floor Helper (16x16 Area)
+            const gridHelper = new THREE.GridHelper(16, 16, 0xef4444, 0x242633);
+            gridHelper.position.y = 0.01;
+            scene.add(gridHelper);
+
+            // Interactive Invisible Ground Plane for raycast intercepts
+            const groundGeo = new THREE.BoxGeometry(16, 0.1, 16);
+            const groundMat = new THREE.MeshStandardMaterial({
+                color: 0x11131a,
+                roughness: 0.8,
+                metalness: 0.2,
+                transparent: true,
+                opacity: 0.5
+            });
+            groundPlane = new THREE.Mesh(groundGeo, groundMat);
+            groundPlane.position.y = -0.05; // Top surface sits exactly at y = 0
+            groundPlane.receiveShadow = true;
+            scene.add(groundPlane);
+
+            // Ghost Builder Preview Mesh
+            const ghostGeo = new THREE.BoxGeometry(0.98, 0.98, 0.98);
+            const ghostMat = new THREE.MeshBasicMaterial({
+                color: new THREE.Color(currentEmissiveColor),
+                transparent: true,
+                opacity: 0.4,
+                wireframe: false
+            });
+            ghostMesh = new THREE.Mesh(ghostGeo, ghostMat);
+            ghostMesh.visible = false;
+            scene.add(ghostMesh);
+
+            // Initialize Event Listeners on 3D Container
+            container.addEventListener('pointerdown', onPointerDown, false);
+            container.addEventListener('pointerup', onPointerUp, false);
+            container.addEventListener('pointermove', onPointerMove, false);
+            container.addEventListener('contextmenu', (e) => e.preventDefault(), false); // Prevent default browser context menu
+
+            // Window resize handler
+            window.addEventListener('resize', onWindowResize, false);
+
+            threeInitialized = true;
+
+            // Spawn default starting block right in the center (1st DOT)
+            spawnCubeAtCoordinate(new THREE.Vector3(0.5, 0.5, 0.5));
+
+            animate();
+        }
+
+        // Build Custom IBC Box Mesh (A realistic cubic light tank container with metal frame)
+        function createIBCTankMesh(emissiveColorHex) {
+            const group = new THREE.Group();
+
+            // Inner translucent tank mesh
+            const boxGeo = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+            const boxMat = new THREE.MeshStandardMaterial({
+                color: 0xdddddd,
+                roughness: 0.1,
+                metalness: 0.1,
+                transparent: true,
+                opacity: 0.85,
+                emissive: new THREE.Color(emissiveColorHex),
+                emissiveIntensity: 0.85
+            });
+            const tank = new THREE.Mesh(boxGeo, boxMat);
+            tank.castShadow = true;
+            tank.receiveShadow = true;
+            tank.name = "tank_core";
+            group.add(tank);
+
+            // Outer metallic cage skeleton lines
+            const cageEdges = new THREE.EdgesGeometry(boxGeo);
+            const cageMat = new THREE.LineBasicMaterial({
+                color: 0x4f5464,
+                linewidth: 2 // Note: Linewidth might always render as 1 depending on browser WebGL support, but looks extremely clean
+            });
+            const cageLine = new THREE.LineSegments(cageEdges, cageMat);
+            cageLine.scale.set(1.02, 1.02, 1.02); // Slightly larger than tank
+            cageLine.name = "tank_cage";
+            group.add(cageLine);
+
+            return group;
+        }
+
+        // Spawn Cube at exact coordinate
+        function spawnCubeAtCoordinate(pos) {
+            const key = getCoordKey(pos);
+            if (placedCoords.has(key)) return; // Space already occupied
+
+            // Boundary constraints checking
+            if (pos.x < -8 || pos.x > 8 || pos.z < -8 || pos.z > 8 || pos.y < 0 || pos.y > 10) return;
+
+            const tankGroup = createIBCTankMesh(currentEmissiveColor);
+            tankGroup.position.copy(pos);
+            scene.add(tankGroup);
+
+            placedCubes.push({
+                mesh: tankGroup,
+                position: pos.clone(),
+                coordStr: key
+            });
+            placedCoords.add(key);
+
+            updateEstimates();
+        }
+
+        // Raycasting coordinate key creator
+        function getCoordKey(v) {
+            return `${v.x.toFixed(1)},${v.y.toFixed(1)},${v.z.toFixed(1)}`;
+        }
+
+        // Pointer click handlers
+        function onPointerDown(e) {
+            pointerDownTime = Date.now();
+            pointerDownPos.x = e.clientX;
+            pointerDownPos.y = e.clientY;
+        }
+
+        function onPointerUp(e) {
+            // Calculate duration and delta to ignore camera movements
+            const dragTime = Date.now() - pointerDownTime;
+            const dragDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+
+            // If it is a clean static click
+            if (dragTime < 250 && dragDist < 4) {
+                e.preventDefault();
+                executeRaycastInteraction(e);
+            }
+        }
+
+        function onPointerMove(e) {
+            if (!threeInitialized) return;
+
+            // Get coordinate normalized mouse position
+            const container = document.getElementById('canvas3d-container');
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / container.clientWidth) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+            if (activeTool === 'draw') {
+                raycaster.setFromCamera(mouse, camera);
+
+                // Collect only interactive targets
+                const raycastTargets = [groundPlane];
+                placedCubes.forEach(cube => {
+                    // Gather target meshes for Raycast (mesh index 0 is the tank core)
+                    raycastTargets.push(cube.mesh.children[0]);
+                });
+
+                const intersects = raycaster.intersectObjects(raycastTargets, true);
+
+                if (intersects.length > 0) {
+                    const hit = intersects[0];
+                    let spawnPos = new THREE.Vector3();
+
+                    if (hit.object === groundPlane) {
+                        // Snap onto grid floor
+                        spawnPos.x = Math.floor(hit.point.x) + 0.5;
+                        spawnPos.z = Math.floor(hit.point.z) + 0.5;
+                        spawnPos.y = 0.5;
+                    } else {
+                        // Stack relative to face hit target
+                        const parentGroup = hit.object.parent;
+                        const normal = hit.face.normal.clone();
+                        // Get directional normal relative to scene
+                        normal.transformDirection(parentGroup.matrixWorld);
+                        
+                        spawnPos.copy(parentGroup.position).add(normal.multiplyScalar(cubeSize));
+                        // Quantize coordinate strictly
+                        spawnPos.x = Math.round(spawnPos.x * 2) / 2;
+                        spawnPos.y = Math.round(spawnPos.y * 2) / 2;
+                        spawnPos.z = Math.round(spawnPos.z * 2) / 2;
+                    }
+
+                    // Bounds checking
+                    if (spawnPos.x >= -8 && spawnPos.x <= 8 && spawnPos.z >= -8 && spawnPos.z <= 8 && spawnPos.y > 0 && spawnPos.y <= 10) {
+                        const key = getCoordKey(spawnPos);
+                        if (!placedCoords.has(key)) {
+                            ghostMesh.position.copy(spawnPos);
+                            ghostMesh.visible = true;
+                            return;
+                        }
+                    }
+                }
+            }
+            ghostMesh.visible = false;
+        }
+
+        // Raycast Click Handler
+        function executeRaycastInteraction(e) {
+            const container = document.getElementById('canvas3d-container');
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / container.clientWidth) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const raycastTargets = [groundPlane];
+            placedCubes.forEach(cube => {
+                raycastTargets.push(cube.mesh.children[0]);
+            });
+
+            const intersects = raycaster.intersectObjects(raycastTargets, true);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                const isRightClick = (e.button === 2); // Mouse right-click detector
+
+                if (isRightClick || activeTool === 'erase') {
+                    // Erase/Delete Block Mode
+                    if (hit.object !== groundPlane) {
+                        const parentGroup = hit.object.parent;
+                        // Find the corresponding custom object inside tracking array
+                        const index = placedCubes.findIndex(c => c.mesh === parentGroup);
+                        if (index !== -1) {
+                            const cubeObj = placedCubes[index];
+                            scene.remove(cubeObj.mesh);
+                            placedCoords.delete(cubeObj.coordStr);
+                            placedCubes.splice(index, 1);
+                            
+                            ghostMesh.visible = false;
+                            updateEstimates();
+                        }
+                    }
+                } else {
+                    // Create/Draw Block Mode (Left-Click)
+                    let spawnPos = new THREE.Vector3();
+
+                    if (hit.object === groundPlane) {
+                        spawnPos.x = Math.floor(hit.point.x) + 0.5;
+                        spawnPos.z = Math.floor(hit.point.z) + 0.5;
+                        spawnPos.y = 0.5;
+                    } else {
+                        const parentGroup = hit.object.parent;
+                        const normal = hit.face.normal.clone();
+                        normal.transformDirection(parentGroup.matrixWorld);
+
+                        spawnPos.copy(parentGroup.position).add(normal.multiplyScalar(cubeSize));
+                        // Snap coords
+                        spawnPos.x = Math.round(spawnPos.x * 2) / 2;
+                        spawnPos.y = Math.round(spawnPos.y * 2) / 2;
+                        spawnPos.z = Math.round(spawnPos.z * 2) / 2;
+                    }
+
+                    spawnCubeAtCoordinate(spawnPos);
+                    onPointerMove(e); // Update ghost position
+                }
+            }
+        }
+
+        // Change Active LED Glow Color
+        function changeLEDColor(colorHex, colorName) {
+            currentEmissiveColor = colorHex;
+            currentEmissiveName = colorName;
+
+            // Highlight chosen color swatch button
+            document.querySelectorAll('.swatch-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(`btn-color-${colorName}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Apply light to ghost mesh
+            if (ghostMesh) {
+                ghostMesh.material.color.set(colorHex);
+            }
+
+            // Real-time update color of all active blocks
+            placedCubes.forEach(cube => {
+                const innerMesh = cube.mesh.children[0]; // Tank inner core
+                if (innerMesh) {
+                    innerMesh.material.emissive.set(colorHex);
+                }
+            });
+        }
+
+        // Clear 3D canvas stage
+        function reset3DStage() {
+            placedCubes.forEach(cube => {
+                scene.remove(cube.mesh);
+            });
+            placedCubes = [];
+            placedCoords.clear();
+            ghostMesh.visible = false;
+
+            // Keep 1 starting block at the center
+            spawnCubeAtCoordinate(new THREE.Vector3(0.5, 0.5, 0.5));
+            updateEstimates();
+        }
+
+        // Smooth animations loop
+        function animate() {
+            if (!threeInitialized) return;
+            requestAnimationFrame(animate);
+
+            // Update orbit controls
+            controls.update();
+
+            renderer.render(scene, camera);
+        }
+
+        // Auto container resize handler
+        function onWindowResize() {
+            if (!threeInitialized) return;
+            const container = document.getElementById('canvas3d-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(width, height);
+        }
+
+        // Active tool toggles (Draw/Erase)
+        function setTool(tool) {
+            activeTool = tool;
+            const drawBtn = document.getElementById('tool-draw');
+            const eraseBtn = document.getElementById('tool-erase');
+
+            if (tool === 'draw') {
+                drawBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 bg-red-600 text-white transition-all';
+                eraseBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 text-gray-400 hover:text-white transition-all';
+                if (ghostMesh) ghostMesh.visible = true;
+            } else {
+                drawBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 text-gray-400 hover:text-white transition-all';
+                eraseBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 bg-red-600 text-white transition-all';
+                if (ghostMesh) ghostMesh.visible = false;
+            }
+        }
+
+        // Multiplier change qty handler
+        function changeQty(id, delta) {
+            const input = document.getElementById(id);
+            if (!input) return;
+            let val = parseInt(input.value) || 0;
+            val = Math.max(0, val + delta);
+            input.value = val;
+            updateEstimates();
+        }
+
+        // Form active package card styling updates
+        function selectFormCard(selectedSpec) {
+            ['custom', '16', '26', '36', 'shade', 'arch'].forEach(spec => {
+                const card = document.getElementById(`card-${spec}`);
+                const radioIcon = document.getElementById(`radio-icon-${spec}`);
+                if (!card || !radioIcon) return;
+                
+                if (spec === selectedSpec) {
+                    card.classList.add('border-red-500/80', 'bg-red-950/10');
+                    card.classList.remove('border-gray-800', 'bg-slate-900/40');
+                    radioIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                    radioIcon.className = 'text-red-500';
+                } else {
+                    card.classList.remove('border-red-500/80', 'bg-red-950/10');
+                    card.classList.add('border-gray-800', 'bg-slate-900/40');
+                    radioIcon.innerHTML = '<i class="fa-regular fa-circle"></i>';
+                    radioIcon.className = 'text-gray-600';
+                }
+            });
+        }
+
+        // Preset structures specifically mapped to 16x16 grid canvas space (2D coords translated to 3D center positions)
+        function applyPreset(presetType) {
+            reset3DStage();
+            // Erase initial block
+            if (placedCubes.length > 0) {
+                scene.remove(placedCubes[0].mesh);
+                placedCubes = [];
+                placedCoords.clear();
+            }
+
+            if (presetType === 'line16') {
+                // Perfect flat 16 DOT row centered along X axis
+                for (let i = 0; i < 16; i++) {
+                    const x = -7.5 + i;
+                    spawnCubeAtCoordinate(new THREE.Vector3(x, 0.5, 0.5));
+                }
+            } else if (presetType === 'arch26') {
+                // Elegant arch configured precisely with exactly 26 nodes
+                const coords = [
+                    [-6.5, 0.5, -4.5], [-5.5, 0.5, -4.5], [-5.5, 0.5, -3.5], [-4.5, 0.5, -3.5], 
+                    [-4.5, 0.5, -2.5], [-3.5, 0.5, -2.5], [-3.5, 0.5, -1.5], [-2.5, 0.5, -1.5],
+                    [-2.5, 0.5, -0.5], [-1.5, 0.5, -0.5], [-1.5, 0.5, 0.5], [-0.5, 0.5, 0.5], 
+                    [-0.5, 0.5, 1.5], [0.5, 0.5, 1.5], [0.5, 0.5, 0.5], [1.5, 0.5, 0.5],
+                    [1.5, 0.5, -0.5], [2.5, 0.5, -0.5], [2.5, 0.5, -1.5], [3.5, 0.5, -1.5], 
+                    [3.5, 0.5, -2.5], [4.5, 0.5, -2.5], [4.5, 0.5, -3.5], [5.5, 0.5, -3.5], 
+                    [5.5, 0.5, -4.5], [6.5, 0.5, -4.5]
+                ];
+                coords.forEach(([x, y, z]) => spawnCubeAtCoordinate(new THREE.Vector3(x, y, z)));
+            } else if (presetType === 'circle36') {
+                // Circle structured to hit 36 DOTs precisely
+                const coords = [
+                    [-1.5, 0.5, -5.5], [-0.5, 0.5, -5.5], [0.5, 0.5, -5.5], [1.5, 0.5, -5.5], 
+                    [-3.5, 0.5, -4.5], [-2.5, 0.5, -4.5], [2.5, 0.5, -4.5], [3.5, 0.5, -4.5],
+                    [-4.5, 0.5, -3.5], [4.5, 0.5, -3.5], [-4.5, 0.5, -2.5], [4.5, 0.5, -2.5], 
+                    [-5.5, 0.5, -1.5], [5.5, 0.5, -1.5], [-5.5, 0.5, -0.5], [5.5, 0.5, -0.5],
+                    [-5.5, 0.5, 0.5], [5.5, 0.5, 0.5], [-5.5, 0.5, 1.5], [5.5, 0.5, 1.5], 
+                    [-4.5, 0.5, 2.5], [4.5, 0.5, 2.5], [-4.5, 0.5, 3.5], [4.5, 0.5, 3.5], 
+                    [-3.5, 0.5, 4.5], [-2.5, 0.5, 4.5], [2.5, 0.5, 4.5], [3.5, 0.5, 4.5],
+                    [-1.5, 0.5, 5.5], [-0.5, 0.5, 5.5], [0.5, 0.5, 5.5], [1.5, 0.5, 5.5],
+                    // Stabilizing rings inside
+                    [-0.5, 0.5, -2.5], [0.5, 0.5, -2.5], [-2.5, 0.5, -0.5], [2.5, 0.5, -0.5], 
+                    [-2.5, 0.5, 0.5], [2.5, 0.5, 0.5], [-0.5, 0.5, 2.5], [0.5, 0.5, 2.5]
+                ];
+                coords.forEach(([x, y, z]) => spawnCubeAtCoordinate(new THREE.Vector3(x, y, z)));
+            } else if (presetType === 'shadeHex') {
+                // Precision Hexagonal perimeter matching exactly 28 DOTs
+                const coords = [
+                    [-1.5, 0.5, -5.5], [-0.5, 0.5, -5.5], [0.5, 0.5, -5.5], [1.5, 0.5, -5.5],
+                    [-2.5, 0.5, -4.5], [2.5, 0.5, -4.5], [-3.5, 0.5, -3.5], [3.5, 0.5, -3.5], 
+                    [-4.5, 0.5, -2.5], [4.5, 0.5, -2.5], [-5.5, 0.5, -1.5], [5.5, 0.5, -1.5],
+                    [-5.5, 0.5, -0.5], [5.5, 0.5, -0.5], [-4.5, 0.5, 0.5], [4.5, 0.5, 0.5], 
+                    [-3.5, 0.5, 1.5], [3.5, 0.5, 1.5], [-2.5, 0.5, 2.5], [2.5, 0.5, 2.5],
+                    [-1.5, 0.5, 3.5], [-0.5, 0.5, 3.5], [0.5, 0.5, 3.5], [1.5, 0.5, 3.5],
+                    // Geometric anchors inside
+                    [-1.5, 0.5, -1.5], [1.5, 0.5, -1.5], [-1.5, 0.5, 1.5], [1.5, 0.5, 1.5]
+                ];
+                coords.forEach(([x, y, z]) => spawnCubeAtCoordinate(new THREE.Vector3(x, y, z)));
+            } else if (presetType === 'shadeSq') {
+                // Perimeter square outer lines structurally tuned to 30 DOTs
+                const coords = [
+                    [-3.5, 0.5, -3.5], [-2.5, 0.5, -3.5], [-1.5, 0.5, -3.5], [-0.5, 0.5, -3.5], 
+                    [0.5, 0.5, -3.5], [1.5, 0.5, -3.5], [2.5, 0.5, -3.5], [3.5, 0.5, -3.5],
+                    [-3.5, 0.5, 3.5], [-2.5, 0.5, 3.5], [-1.5, 0.5, 3.5], [-0.5, 0.5, 3.5], 
+                    [0.5, 0.5, 3.5], [1.5, 0.5, 3.5], [2.5, 0.5, 3.5], [3.5, 0.5, 3.5],
+                    [-3.5, 0.5, -2.5], [-3.5, 0.5, -1.5], [-3.5, 0.5, -0.5], [-3.5, 0.5, 0.5], 
+                    [-3.5, 0.5, 1.5], [-3.5, 0.5, 2.5], [3.5, 0.5, -2.5], [3.5, 0.5, -1.5], 
+                    [3.5, 0.5, -0.5], [3.5, 0.5, 0.5], [3.5, 0.5, 1.5], [3.5, 0.5, 2.5],
+                    // Central stabilizing nodes
+                    [-0.5, 0.5, -0.5], [0.5, 0.5, 0.5]
+                ];
+                coords.forEach(([x, y, z]) => spawnCubeAtCoordinate(new THREE.Vector3(x, y, z)));
+            }
+            updateEstimates();
+        }
+
+        // Smart Logistics Optimization Algorithm (Finds the cheapest combination of trucks)
+        function getOptimizedTrucks(qty) {
+            if (qty <= 0) return { cost: 0, desc: "미배정", trucks: [] };
+
+            let bestCost = Infinity;
+            let bestComb = null;
+
+            const max11t = Math.ceil(qty / 36);
+            const max5t = Math.ceil(qty / 26);
+            const max3_5t = Math.ceil(qty / 16);
+
+            for (let c = 0; c <= max11t; c++) {
+                for (let b = 0; b <= max5t; b++) {
+                    for (let a = 0; a <= max3_5t; a++) {
+                        const totalCap = a * 16 + b * 26 + c * 36;
+                        if (totalCap >= qty) {
+                            const currentCost = a * prices.truck16 + b * prices.truck26 + c * prices.truck36;
+                            if (currentCost < bestCost) {
+                                bestCost = currentCost;
+                                bestComb = { a, b, c };
+                            } else if (currentCost === bestCost) {
+                                const currentTotalTrucks = a + b + c;
+                                const bestTotalTrucks = bestComb ? (bestComb.a + bestComb.b + bestComb.c) : Infinity;
+                                if (currentTotalTrucks < bestTotalTrucks) {
+                                    bestComb = { a, b, c };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            const descParts = [];
+            if (bestComb.c > 0) descParts.push(`11톤 ${bestComb.c}대`);
+            if (bestComb.b > 0) descParts.push(`5톤 ${bestComb.b}대`);
+            if (bestComb.a > 0) descParts.push(`3.5톤 ${bestComb.a}대`);
+
+            return {
+                cost: bestCost,
+                desc: descParts.join(" + "),
+                comb: bestComb
+            };
+        }
+
+        // Real-time calculation math
+        function updateEstimates() {
+            // Read universal accessories inputs (Enabled only when Card/Form tab is active)
+            const isFormTab = (activeTab === 'form');
+            const accTable = isFormTab ? Math.max(0, parseInt(document.getElementById('acc_table').value) || 0) : 0;
+            const accParasol = isFormTab ? Math.max(0, parseInt(document.getElementById('acc_parasol').value) || 0) : 0;
+            const accString = isFormTab ? Math.max(0, parseInt(document.getElementById('acc_string').value) || 0) : 0;
+            const accShadeTri = isFormTab ? Math.max(0, parseInt(document.getElementById('acc_shade_tri').value) || 0) : 0;
+            const accShadeSq = isFormTab ? Math.max(0, parseInt(document.getElementById('acc_shade_sq').value) || 0) : 0;
+            const accWater = isFormTab ? Math.max(0, parseInt(document.getElementById('acc_water').value) || 0) : 0;
+
+            const breakdownContainer = document.getElementById('breakdown-list');
+
+            let tankQty = 0;
+            let tankCost = 0;
+            let peopleCount = 0;
+            let peopleCost = 0;
+            let truckCost = 0;
+            let forkliftCost = 0;
+            let waterCost = 0;
+            
+            let isPlusA = false;
+            let optTruckDesc = "";
+            let listHtml = "";
+            let specDetailName = "";
+            let forkliftCount = 2;
+            let autoWaterCount = 0;
+
+            if (isFormTab) {
+                const specElement = document.querySelector('input[name="tank_spec"]:checked');
+                if (!specElement) return;
+                const spec = specElement.value; // "custom", "16", "26", "36", "shade", "arch"
+
+                // UI adjustments
+                const qtyContainer = document.getElementById('tank-qty-container');
+                const subSpecContainer = document.getElementById('sub-spec-container');
+                const shadeOptions = document.getElementById('shade-options');
+                const archOptions = document.getElementById('arch-options');
+
+                if (spec === "custom") {
+                    qtyContainer.style.display = "flex";
+                    subSpecContainer.style.display = "none";
+                    tankQty = Math.max(0, parseInt(document.getElementById('tank_qty').value) || 0);
+                } else if (spec === "shade") {
+                    qtyContainer.style.display = "none";
+                    subSpecContainer.style.display = "block";
+                    shadeOptions.classList.remove('hidden');
+                    archOptions.classList.add('hidden');
+                    document.getElementById('sub-spec-label').innerText = "선쉐이드 세부 타입 선택";
+                } else if (spec === "arch") {
+                    qtyContainer.style.display = "none";
+                    subSpecContainer.style.display = "block";
+                    shadeOptions.classList.add('hidden');
+                    archOptions.classList.remove('hidden');
+                    document.getElementById('sub-spec-label').innerText = "아치 세부 타입 선택";
+                } else {
+                    qtyContainer.style.display = "none";
+                    subSpecContainer.style.display = "none";
+                    tankQty = parseInt(spec);
+                }
+
+                // Apply dynamic styles to selection
+                selectFormCard(spec);
+
+                // Setup specific parameters depending on chosen package
+                let truckCostUnit = 0;
+                let truckName = "";
+
+                if (spec === "custom") {
+                    specDetailName = "LIGHTTANK CUSTOM";
+                    if (tankQty === 0) {
+                        peopleCount = 0;
+                    } else if (tankQty >= 1 && tankQty <= 16) {
+                        peopleCount = 2;
+                    } else if (tankQty > 16 && tankQty <= 26) {
+                        peopleCount = 3;
+                    } else if (tankQty > 26 && tankQty <= 36) {
+                        peopleCount = 4;
+                    } else {
+                        peopleCount = 4;
+                        isPlusA = true;
+                    }
+
+                    if (tankQty <= 16) {
+                        truckCostUnit = prices.truck16;
+                        truckName = "3.5톤 화물차";
+                    } else if (tankQty <= 26) {
+                        truckCostUnit = prices.truck26;
+                        truckName = "5톤 화물차";
+                    } else {
+                        truckCostUnit = prices.truck36;
+                        truckName = "11톤 화물차";
+                    }
+
+                } else if (spec === "16") {
+                    specDetailName = "16 DOT 사양";
+                    tankQty = 16;
+                    peopleCount = 2;
+                    truckCostUnit = prices.truck16;
+                    truckName = "3.5톤 화물차";
+                    forkliftCount = 2;
+
+                } else if (spec === "26") {
+                    specDetailName = "26 DOT 사양";
+                    tankQty = 26;
+                    peopleCount = 3;
+                    truckCostUnit = prices.truck26;
+                    truckName = "5톤 화물차";
+                    forkliftCount = 2;
+
+                } else if (spec === "36") {
+                    specDetailName = "36 DOT 사양";
+                    tankQty = 36;
+                    peopleCount = 4;
+                    truckCostUnit = prices.truck36;
+                    truckName = "11톤 화물차";
+                    forkliftCount = 2;
+
+                } else if (spec === "shade") {
+                    const shadeType = document.querySelector('input[name="sub_spec_shade"]:checked').value;
+                    // Styling
+                    ['hexagon', 'square'].forEach(type => {
+                        const subCard = document.getElementById(`sub-card-${type}`);
+                        const subIcon = document.getElementById(`sub-icon-${type}`);
+                        if (type === shadeType) {
+                            subCard.classList.add('border-red-500', 'bg-red-950/20');
+                            subIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                            subIcon.className = 'text-red-500';
+                        } else {
+                            subCard.classList.remove('border-red-500', 'bg-red-950/20');
+                            subIcon.innerHTML = '<i class="fa-regular fa-circle"></i>';
+                            subIcon.className = 'text-gray-600';
+                        }
+                    });
+
+                    if (shadeType === "hexagon") {
+                        specDetailName = "LTTK 선쉐이드 (육각형)";
+                        tankQty = 28;
+                        peopleCount = 4;
+                        truckCostUnit = prices.truck36;
+                        truckName = "11톤 화물차";
+                        forkliftCount = 3;
+                        autoWaterCount = 1;
+                    } else {
+                        specDetailName = "LTTK 선쉐이드 (사각형)";
+                        tankQty = 30;
+                        peopleCount = 4;
+                        truckCostUnit = prices.truck36;
+                        truckName = "11톤 화물차";
+                        forkliftCount = 3;
+                        autoWaterCount = 1;
+                    }
+
+                } else if (spec === "arch") {
+                    const archType = document.querySelector('input[name="sub_spec_arch"]:checked').value;
+                    // Styling
+                    ['basic', 'extended'].forEach(type => {
+                        const subCard = document.getElementById(`sub-card-${type}`);
+                        const subIcon = document.getElementById(`sub-icon-${type}`);
+                        if (type === archType) {
+                            subCard.classList.add('border-red-500', 'bg-red-950/20');
+                            subIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                            subIcon.className = 'text-red-500';
+                        } else {
+                            subCard.classList.remove('border-red-500', 'bg-red-950/20');
+                            subIcon.innerHTML = '<i class="fa-regular fa-circle"></i>';
+                            subIcon.className = 'text-gray-600';
+                        }
+                    });
+
+                    if (archType === "basic") {
+                        specDetailName = "LTTK 아치 (기본형)";
+                        tankQty = 12;
+                        peopleCount = 2;
+                        truckCostUnit = prices.truck16;
+                        truckName = "3.5톤 화물차";
+                        forkliftCount = 2;
+                        autoWaterCount = 1;
+                    } else {
+                        specDetailName = "LTTK 아치 (확장형)";
+                        tankQty = 26;
+                        peopleCount = 3;
+                        truckCostUnit = prices.truck26;
+                        truckName = "5톤 화물차";
+                        forkliftCount = 3;
+                        autoWaterCount = 1;
+                    }
+                }
+
+                // Render meta quantities
+                document.getElementById('meta-quant-value').innerText = `${tankQty} DOT`;
+
+                // Sub Calculations
+                tankCost = prices.tank * tankQty;
+                peopleCost = prices.people * peopleCount * 2; // 왕복
+                
+                if (spec === "custom" && tankQty > 36) {
+                    const optTruck = getOptimizedTrucks(tankQty);
+                    truckCost = optTruck.cost * 2;
+                    optTruckDesc = `${optTruck.desc} 왕복 <span class="text-emerald-400 font-bold text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded ml-1">[스마트 최적 최저가]</span>`;
+                } else {
+                    truckCost = tankQty > 0 ? (truckCostUnit * 2) : 0;
+                    optTruckDesc = `${truckName} 왕복`;
+                }
+
+                forkliftCost = tankQty > 0 ? (prices.forklift * forkliftCount) : 0;
+                waterCost = (autoWaterCount * prices.water) + (accWater * prices.water);
+
+                // Build Invoice breakdown HTML for Form
+                if (tankQty > 0) {
+                    listHtml += createInvoiceRow(`라이트탱크 (${specDetailName}) × ${tankQty} DOT`, tankCost);
+                    
+                    const peopleLabel = isPlusA ? "설치/철수 전담 인력 (4명 + α)" : `설치/철수 전담 인력 (${peopleCount}명)`;
+                    const peopleSubText = isPlusA ? " (추가 인력 α 별도 협의)" : "";
+                    listHtml += createInvoiceRow(`${peopleLabel} × 2회${peopleSubText}`, peopleCost, true);
+                    listHtml += createInvoiceRow(`물류 화물 차량 수송 (${optTruckDesc})`, truckCost, true);
+                    listHtml += createInvoiceRow(`중장비 현장 기동 지원 (지게차 ${forkliftCount}회)`, forkliftCost, true);
+                    if (autoWaterCount > 0) {
+                        listHtml += createInvoiceRow(`특수 설계 물차 지원 (5톤 ${autoWaterCount}회)`, autoWaterCount * prices.water, true);
+                    }
+                }
+
+            } else {
+                // Tab === Grid active (3D Drawing Stage mode)
+                const activeDots = placedCubes.length;
+                document.getElementById('meta-quant-value').innerText = `${activeDots} DOT`;
+
+                tankQty = activeDots;
+
+                if (activeDots === 0) {
+                    breakdownContainer.innerHTML = `
+                        <div class="text-center py-16 text-gray-500 text-xs space-y-2">
+                            <i class="fa-solid fa-cube text-3xl opacity-30 block mx-auto animate-bounce"></i>
+                            <span>3D 도면에 탱크를 빌드해주시면<br>실시간 예상 요금이 자동 설계됩니다.</span>
+                        </div>
+                    `;
+                    document.getElementById('grand-total').innerText = '₩0';
+                    return;
+                }
+
+                tankCost = activeDots * prices.tank;
+
+                if (activeDots >= 1 && activeDots <= 16) {
+                    peopleCount = 2;
+                } else if (activeDots > 16 && activeDots <= 26) {
+                    peopleCount = 3;
+                } else if (activeDots > 26 && activeDots <= 36) {
+                    peopleCount = 4;
+                } else {
+                    peopleCount = 4;
+                    isPlusA = true;
+                }
+                peopleCost = prices.people * peopleCount * 2;
+
+                const optimizedFreight = getOptimizedTrucks(activeDots);
+                truckCost = optimizedFreight.cost * 2;
+
+                if (activeDots > 26) {
+                    forkliftCount = 3;
+                } else {
+                    forkliftCount = 2;
+                }
+                forkliftCost = prices.forklift * forkliftCount;
+
+                const autoWaterNeeded = activeDots >= 36;
+                const autoWaterCost = autoWaterNeeded ? prices.water : 0;
+                waterCost = autoWaterCost; // No optional accessories calculated on 3D mode
+
+                // Build Invoice breakdown HTML for Grid
+                listHtml += createInvoiceRow(`라이트탱크 (3D 도면 연동) × ${activeDots} DOT`, tankCost);
+                
+                const peopleLabel = isPlusA ? "설치/철수 전담 인력 (4명 + α)" : `설치/철수 전담 인력 (${peopleCount}명)`;
+                const peopleSubText = isPlusA ? " (추가 인력 α 별도 협의)" : "";
+                listHtml += createInvoiceRow(`${peopleLabel} × 2회${peopleSubText}`, peopleCost, true);
+
+                const freightLabel = activeDots > 36 
+                    ? `${optimizedFreight.desc} 왕복 <span class="text-emerald-400 font-bold text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded ml-1">[스마트 최적 최저가]</span>`
+                    : `${optimizedFreight.desc} 왕복`;
+                listHtml += createInvoiceRow(`물류 화물 차량 수송 (${freightLabel})`, truckCost, true);
+                listHtml += createInvoiceRow(`중장비 현장 기동 지원 (지게차 ${forkliftCount}회)`, forkliftCost, true);
+
+                if (autoWaterNeeded) {
+                    listHtml += createInvoiceRow("특수 설계 물차 자동 기동 지원 (5톤 1회)", autoWaterCost, true);
+                }
+            }
+
+            // Calculations based on tab active status
+            const tableCost = isFormTab ? (prices.table * accTable) : 0;
+            const parasolCost = isFormTab ? (prices.parasol * accParasol) : 0;
+            const stringCost = isFormTab ? (prices.string * accString) : 0;
+            const shadeTriCost = isFormTab ? (prices.shadeTri * accShadeTri) : 0;
+            const shadeSqCost = isFormTab ? (prices.shadeSq * accShadeSq) : 0;
+            const manualWaterCost = isFormTab ? (accWater * prices.water) : 0;
+
+            if (isFormTab) {
+                if (accTable > 0) listHtml += createInvoiceRow(`LTTK_테이블 × ${accTable}식`, tableCost);
+                if (accParasol > 0) listHtml += createInvoiceRow(`LTTK_파라솔 × ${accParasol}식`, parasolCost);
+                if (accShadeTri > 0) listHtml += createInvoiceRow(`LTTK_선쉐이드 (삼각) × ${accShadeTri}식`, shadeTriCost);
+                if (accShadeSq > 0) listHtml += createInvoiceRow(`LTTK_선쉐이드 (사각) × ${accShadeSq}식`, shadeSqCost);
+                if (accString > 0) listHtml += createInvoiceRow(`LTTK_스트링라이트 × ${accString}m`, stringCost);
+                if (accWater > 0) listHtml += createInvoiceRow(`LTTK_물차 (5톤) × ${accWater}회 (수동)`, manualWaterCost);
+            }
+
+            // Print combined total sum based on active tab state
+            const finalSum = tankCost + peopleCost + truckCost + forkliftCost + (isFormTab && autoWaterCount > 0 ? (autoWaterCount * prices.water) : 0) + (!isFormTab && tankQty >= 36 ? prices.water : 0) + tableCost + parasolCost + stringCost + shadeTriCost + shadeSqCost + manualWaterCost;
+
+            breakdownContainer.innerHTML = listHtml || `
+                <div class="text-center py-16 text-gray-500 text-xs">
+                    <span>규격을 선택하거나 도면에 마킹해 주세요.</span>
+                </div>
+            `;
+            document.getElementById('grand-total').innerText = `₩${finalSum.toLocaleString()}`;
+
+            // Sync print metadata text for PDF export
+            const currentDesc = isFormTab ? specDetailName : "3D 도면 스케치";
+            document.getElementById('print-stage-info').innerHTML = `
+                <p><strong>설계 모드:</strong> ${isFormTab ? '간편 카드 선택' : '3D 입체 도면 설계'}</p>
+                <p><strong>설계 규모:</strong> ${tankQty} DOT (${currentDesc})</p>
+                <p><strong>총 예상 합계:</strong> ₩${finalSum.toLocaleString()} (부가세 별도)</p>
+            `;
+        }
+
+        // Custom list item generation logic
+        function createInvoiceRow(title, price, isSubItem = false) {
+            return `
+                <div class="flex justify-between items-center text-xs py-1 ${isSubItem ? 'pl-4 text-gray-400 border-l border-gray-800' : 'text-white font-semibold'}">
+                    <span>${title}</span>
+                    <span class="font-bold text-right text-gray-200">₩${price.toLocaleString()}</span>
+                </div>
+            `;
+        }
+
+        // Initialization on window load (No automatic 3D init inside hidden tab)
+        window.onload = function() {
+            updateEstimates();
+        };
+    </script>
+</body>
+</html>
